@@ -48,6 +48,7 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
     const usersCollection=client.db('languageLadder').collection('users');
+    const classesCollection=client.db('languageLadder').collection('classes');
 
     app.post('/jwt', (req, res) => {
         const user = req.body;
@@ -98,6 +99,18 @@ async function run() {
         const result = { admin: user?.role === 'admin' }
         res.send(result);
       })
+      app.get('/users/instructor/:email', verifyJWT, async (req, res) => {
+        const email = req.params.email;
+  
+        if (req.decoded.email !== email) {
+          res.send({ instructor: false })
+        }
+  
+        const query = { email: email }
+        const user = await usersCollection.findOne(query);
+        const result = { instructor: user?.role === 'instructor' }
+        res.send(result);
+      })
 
       app.patch('/users/admin/:id', async (req, res) => {
         const id = req.params.id;
@@ -112,6 +125,73 @@ async function run() {
         };
   
         const result = await usersCollection.updateOne(filter, updateDoc);
+        res.send(result);
+  
+      })
+
+    //   Add Class Data to mongodb collection
+  app.post('/addClasses', async(req, res)=>{
+    const classes = req.body;
+    console.log(classes);
+    const result=await classesCollection.insertOne(classes);
+    res.send(result);
+  })
+  app.get('/classes/:email', async (req, res) => {
+    const email=req.params.email;
+    // console.log(email);
+    const query = { instructorEmail: email};
+      const classes = await classesCollection.find(query).toArray();
+      res.send(classes);
+    });
+
+    app.get('/classes', async (req, res) => {
+            const classes = await classesCollection.find().toArray();
+            res.send(classes);
+    });
+
+    app.patch('/classes/:id', async (req, res) => {
+        const id = req.params.id;
+         const updateDocument=req.body;
+        const filter = { _id: new ObjectId(id) };
+        const updateDoc={
+            $set:{
+                availableSeats:updateDocument.availableSeats,
+                className:updateDocument.className,
+                classImage:updateDocument.classImage,
+                price:updateDocument.price
+            }
+        }
+        const result = await classesCollection.updateOne(filter, updateDoc);
+        res.send(result);
+    })
+
+    // admin patch
+    app.patch('/classes/admin/:id', async (req, res) => {
+        const id = req.params.id;
+        const {status, feedback}=req.body;
+        
+        console.log(feedback,  status);
+        let updateDoc={};
+        const filter = { _id: new ObjectId(id) };
+        if(status){
+             updateDoc = {
+              $set: {
+                status: status,
+              },
+            };
+        }
+        else if(feedback){
+           updateDoc = {
+              $set: {
+                feedback: feedback,
+              },
+            };
+        }else{
+            return;
+        }
+      
+  
+        const result = await classesCollection.updateOne(filter, updateDoc);
         res.send(result);
   
       })
