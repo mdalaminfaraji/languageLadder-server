@@ -49,6 +49,7 @@ async function run() {
     await client.connect();
     const usersCollection=client.db('languageLadder').collection('users');
     const classesCollection=client.db('languageLadder').collection('classes');
+    const selectClassesCollection=client.db('languageLadder').collection('selectClasses');
 
     app.post('/jwt', (req, res) => {
         const user = req.body;
@@ -195,6 +196,82 @@ async function run() {
         res.send(result);
   
       })
+
+
+
+      // ClassesPage Api
+      app.get('/approvedClass', async (req, res) => {
+
+        const classes = await classesCollection.find({status:'approved'}).toArray();
+        res.send(classes);
+     });
+
+    //  instructors page api
+    app.get('/instructors', async (req, res) => {
+      const instructors=await usersCollection.find({role:'instructor'}).toArray();
+      res.send(instructors);
+    })
+ 
+
+
+    // students Select class 
+    app.post('/selectClass', async (req, res) => {
+      const {selectClass, _id, studentEmail} = req.body;
+      console.log(selectClass, _id, studentEmail); 
+      // const existingUser = await selectClassesCollection.findOne({_id});
+      // const existingUserEmail=await selectClassesCollection.findOne({studentEmail:studentEmail});
+         
+      //    if(existingUser&&existingUserEmail){
+      //     return res.send({ message: 'You already  added this class' })
+      //    }
+     const result=await selectClassesCollection.insertOne(selectClass);
+     res.send(result);
+        // classesCollection.updateOne(
+        //   { _id: new ObjectId(id) },
+        //   {$inc:{availableSeats: -1}},
+        //   (err, result) => {
+        //     if (err) {
+        //       console.error('An error occurred:', err);
+        //       return res.status(500).send('An error occurred');
+        //     }
+    
+        //     if (result.matchedCount === 0) {
+        //       return res.status(404).send('Class not found');
+        //     }
+    
+        //     return res.status(200).send('Class selected successfully');
+        //   }
+        // );
+
+    })
+
+    app.get('/selectClass/student/:email', async (req, res) => {
+      const email=req.params.email;
+      // console.log(email);
+      const query = {  studentEmail: email};
+        const classes = await selectClassesCollection.find(query).toArray();
+        res.send(classes);
+      });
+
+      
+      app.delete('/selectClass/:id', async (req, res) => {
+        const id = req.params.id;
+      
+        try {
+          const filter = { _id:new ObjectId(id) };
+          const result = await selectClassesCollection.deleteOne(filter);
+          
+          if (result.deletedCount === 1) {
+            res.sendStatus(204); // Successful deletion, no content
+          } else {
+            res.sendStatus(404); // Document not found
+          }
+        } catch (error) {
+          console.log('Error:', error);
+          res.sendStatus(500); // Internal server error
+        }
+      });
+      
 
 
     // Send a ping to confirm a successful connection
