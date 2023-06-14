@@ -228,22 +228,6 @@ async function run() {
       //    }
      const result=await selectClassesCollection.insertOne(selectClass);
      res.send(result);
-        // classesCollection.updateOne(
-        //   { _id: new ObjectId(id) },
-        //   {$inc:{availableSeats: -1}},
-        //   (err, result) => {
-        //     if (err) {
-        //       console.error('An error occurred:', err);
-        //       return res.status(500).send('An error occurred');
-        //     }
-    
-        //     if (result.matchedCount === 0) {
-        //       return res.status(404).send('Class not found');
-        //     }
-    
-        //     return res.status(200).send('Class selected successfully');
-        //   }
-        // );
 
     })
 
