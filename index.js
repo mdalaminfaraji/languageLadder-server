@@ -47,7 +47,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
     const usersCollection=client.db('languageLadder').collection('users');
     const classesCollection=client.db('languageLadder').collection('classes');
     const selectClassesCollection=client.db('languageLadder').collection('selectClasses');
@@ -72,7 +72,7 @@ async function run() {
       }
 
 // user related api
-      app.get('/users', async (req, res) => {
+      app.get('/users',verifyJWT, verifyAdmin, async (req, res) => {
         const result = await usersCollection.find().toArray();
         res.send(result);
       });
@@ -101,8 +101,8 @@ async function run() {
         const user = await usersCollection.findOne(query);
         const result = { admin: user?.role === 'admin' }
         res.send(result);
-      })
-      app.get('/users/instructor/:email', verifyJWT, async (req, res) => {
+      })   
+      app.get('/users/instructor/:email',verifyJWT,  async (req, res) => {
         const email = req.params.email;
   
         if (req.decoded.email !== email) {
@@ -148,7 +148,7 @@ async function run() {
     });
 
     app.get('/classes', async (req, res) => {
-            const classes = await classesCollection.find().toArray();
+            const classes = await classesCollection.find().sort({totalEnrolment:-1}).toArray();
             res.send(classes);
     });
 
@@ -296,10 +296,34 @@ async function run() {
       const insertResult = await paymentCollection.insertOne(payment);
 
       const query = { _id: new ObjectId(id)}
-      const deleteResult = await selectClassesCollection.deleteOne(query)
+      const deleteResult = await selectClassesCollection.deleteOne(query);
+    const updateClassResult= await  classesCollection.updateOne(
+          { _id: new ObjectId(payment.selectClassid) },
+          {$inc:{availableSeats: -1, totalEnrolment: +1}},
+          (err, result) => {
+            if (err) {
+              console.error('An error occurred:', err);
+              return res.status(500).send('An error occurred');
+            }
+    
+            if (result.matchedCount === 0) {
+              return res.status(404).send('Class not found');
+            }
+    
+            return res.status(200).send('Class selected successfully');
+          }
+        );
 
-      res.send({ insertResult, deleteResult });
+
+      res.send({ insertResult, deleteResult , updateClassResult});
     })
+
+    app.get('/payments/:email',  async (req, res) => {
+      const userEmail=req.params.email;
+         const filter={email: userEmail}
+          const payments = await paymentCollection.find(filter).sort({date:-1}).toArray();
+          res.send(payments);
+        })
       
 
 
@@ -315,9 +339,9 @@ run().catch(console.dir);
 
 
 app.get('/', (req, res) => {
-    res.send('Hello World!')
+    res.send('Summer camp server is running....')
  })
   
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`)
- })
+ }) 
