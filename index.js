@@ -139,7 +139,7 @@ async function run() {
     const result=await classesCollection.insertOne(classes);
     res.send(result);
   })
-  app.get('/classes/:email', async (req, res) => {
+  app.get('/classes/:email', verifyJWT,async (req, res) => {
     const email=req.params.email;
     // console.log(email);
     const query = { instructorEmail: email};
@@ -147,7 +147,7 @@ async function run() {
       res.send(classes);
     });
 
-    app.get('/classes', async (req, res) => {
+    app.get('/classes', verifyJWT,async (req, res) => {
             const classes = await classesCollection.find().sort({totalEnrolment:-1}).toArray();
             res.send(classes);
     });
