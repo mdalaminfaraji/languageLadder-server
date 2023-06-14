@@ -220,12 +220,6 @@ async function run() {
     app.post('/selectClass', async (req, res) => {
       const {selectClass, _id, studentEmail} = req.body;
       console.log(selectClass, _id, studentEmail); 
-      // const existingUser = await selectClassesCollection.findOne({_id});
-      // const existingUserEmail=await selectClassesCollection.findOne({studentEmail:studentEmail});
-         
-      //    if(existingUser&&existingUserEmail){
-      //     return res.send({ message: 'You already  added this class' })
-      //    }
      const result=await selectClassesCollection.insertOne(selectClass);
      res.send(result);
 
