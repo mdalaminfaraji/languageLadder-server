@@ -202,7 +202,7 @@ async function run() {
 
 
       // ClassesPage Api
-      app.get('/approvedClass', async (req, res) => {
+      app.get('/approvedClass', verifyJWT,async (req, res) => {
 
         const classes = await classesCollection.find({status:'approved'}).toArray();
         res.send(classes);
